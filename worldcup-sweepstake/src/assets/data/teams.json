@@ -1,0 +1,41 @@
+[
+  { "id": "netherlands",  "name": "Netherlands",  "flag": "🇳🇱", "group": "A", "fifaRank": 7,  "preOdds": 0.050, "color": "#FF6600" },
+  { "id": "senegal",      "name": "Senegal",       "flag": "🇸🇳", "group": "A", "fifaRank": 20, "preOdds": 0.008, "color": "#00853F" },
+  { "id": "ecuador",      "name": "Ecuador",       "flag": "🇪🇨", "group": "A", "fifaRank": 44, "preOdds": 0.004, "color": "#FFD100" },
+  { "id": "qatar",        "name": "Qatar",          "flag": "🇶🇦", "group": "A", "fifaRank": 58, "preOdds": 0.001, "color": "#8D1B3D" },
+
+  { "id": "england",      "name": "England",       "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "group": "B", "fifaRank": 4,  "preOdds": 0.110, "color": "#003082" },
+  { "id": "usa",          "name": "USA",            "flag": "🇺🇸", "group": "B", "fifaRank": 11, "preOdds": 0.016, "color": "#002868" },
+  { "id": "iran",         "name": "Iran",           "flag": "🇮🇷", "group": "B", "fifaRank": 22, "preOdds": 0.003, "color": "#239F40" },
+  { "id": "wales",        "name": "Wales",          "flag": "🏴󠁧󠁢󠁷󠁬󠁳󠁿", "group": "B", "fifaRank": 19, "preOdds": 0.003, "color": "#C8102E" },
+
+  { "id": "argentina",    "name": "Argentina",     "flag": "🇦🇷", "group": "C", "fifaRank": 1,  "preOdds": 0.145, "color": "#74ACDF" },
+  { "id": "poland",       "name": "Poland",         "flag": "🇵🇱", "group": "C", "fifaRank": 26, "preOdds": 0.005, "color": "#DC143C" },
+  { "id": "mexico",       "name": "Mexico",         "flag": "🇲🇽", "group": "C", "fifaRank": 14, "preOdds": 0.009, "color": "#006847" },
+  { "id": "saudi_arabia", "name": "Saudi Arabia",  "flag": "🇸🇦", "group": "C", "fifaRank": 56, "preOdds": 0.001, "color": "#006C35" },
+
+  { "id": "france",       "name": "France",         "flag": "🇫🇷", "group": "D", "fifaRank": 2,  "preOdds": 0.135, "color": "#002395" },
+  { "id": "denmark",      "name": "Denmark",        "flag": "🇩🇰", "group": "D", "fifaRank": 21, "preOdds": 0.012, "color": "#C60C30" },
+  { "id": "australia",    "name": "Australia",      "flag": "🇦🇺", "group": "D", "fifaRank": 25, "preOdds": 0.005, "color": "#003082" },
+  { "id": "tunisia",      "name": "Tunisia",        "flag": "🇹🇳", "group": "D", "fifaRank": 33, "preOdds": 0.002, "color": "#E70013" },
+
+  { "id": "spain",        "name": "Spain",          "flag": "🇪🇸", "group": "E", "fifaRank": 8,  "preOdds": 0.090, "color": "#AA151B" },
+  { "id": "germany",      "name": "Germany",        "flag": "🇩🇪", "group": "E", "fifaRank": 16, "preOdds": 0.075, "color": "#000000" },
+  { "id": "japan",        "name": "Japan",          "flag": "🇯🇵", "group": "E", "fifaRank": 18, "preOdds": 0.010, "color": "#BC002D" },
+  { "id": "costa_rica",   "name": "Costa Rica",     "flag": "🇨🇷", "group": "E", "fifaRank": 50, "preOdds": 0.002, "color": "#002B7F" },
+
+  { "id": "belgium",      "name": "Belgium",        "flag": "🇧🇪", "group": "F", "fifaRank": 5,  "preOdds": 0.035, "color": "#EF3340" },
+  { "id": "croatia",      "name": "Croatia",        "flag": "🇭🇷", "group": "F", "fifaRank": 9,  "preOdds": 0.025, "color": "#FF0000" },
+  { "id": "morocco",      "name": "Morocco",        "flag": "🇲🇦", "group": "F", "fifaRank": 13, "preOdds": 0.018, "color": "#C1272D" },
+  { "id": "canada",       "name": "Canada",         "flag": "🇨🇦", "group": "F", "fifaRank": 40, "preOdds": 0.004, "color": "#FF0000" },
+
+  { "id": "brazil",       "name": "Brazil",         "flag": "🇧🇷", "group": "G", "fifaRank": 3,  "preOdds": 0.125, "color": "#009C3B" },
+  { "id": "switzerland",  "name": "Switzerland",    "flag": "🇨🇭", "group": "G", "fifaRank": 19, "preOdds": 0.010, "color": "#FF0000" },
+  { "id": "serbia",       "name": "Serbia",         "flag": "🇷🇸", "group": "G", "fifaRank": 33, "preOdds": 0.006, "color": "#C6363C" },
+  { "id": "cameroon",     "name": "Cameroon",       "flag": "🇨🇲", "group": "G", "fifaRank": 43, "preOdds": 0.002, "color": "#007A5E" },
+
+  { "id": "portugal",     "name": "Portugal",       "flag": "🇵🇹", "group": "H", "fifaRank": 6,  "preOdds": 0.060, "color": "#006600" },
+  { "id": "uruguay",      "name": "Uruguay",        "flag": "🇺🇾", "group": "H", "fifaRank": 17, "preOdds": 0.020, "color": "#5AAAFA" },
+  { "id": "south_korea",  "name": "South Korea",   "flag": "🇰🇷", "group": "H", "fifaRank": 24, "preOdds": 0.007, "color": "#C60C30" },
+  { "id": "ghana",        "name": "Ghana",          "flag": "🇬🇭", "group": "H", "fifaRank": 61, "preOdds": 0.002, "color": "#006B3F" }
+]
