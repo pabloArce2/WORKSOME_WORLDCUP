@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import teams from '../assets/data/teams.json'
+import { enrichTeam } from '../assets/data/teamMeta.js'
 
 export const useUserStore = defineStore('user', () => {
   const user = ref(null)
@@ -8,7 +9,7 @@ export const useUserStore = defineStore('user', () => {
 
   const team = computed(() =>
     profile.value?.teamId
-      ? teams.find(t => t.id === profile.value.teamId) ?? null
+      ? enrichTeam(teams.find(t => t.id === profile.value.teamId) ?? profile.value.team) ?? null
       : null
   )
 

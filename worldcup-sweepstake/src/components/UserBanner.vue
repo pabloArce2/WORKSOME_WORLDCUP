@@ -20,7 +20,7 @@
     </div>
 
     <div v-if="store.team && !hideTeam" class="flex items-center gap-2 flex-shrink-0">
-      <span class="text-2xl leading-none">{{ store.team.flag }}</span>
+      <TeamMark :team="store.team" :size="32" />
       <div class="text-right">
         <p class="text-white font-medium text-sm">{{ store.team.name }}</p>
         <span v-if="store.profile?.winProbability"
@@ -36,6 +36,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useUserStore } from '../stores/user.js'
+import TeamMark from './TeamMark.vue'
 
 defineProps({
   hideTeam: { type: Boolean, default: false },
