@@ -26,7 +26,14 @@
         role="row"
       >
         <div class="team-column team-cell" role="cell">
-          <TeamMark :team="team" :size="24" />
+          <button
+            class="team-shield-button"
+            type="button"
+            :aria-label="`Open ${team.name} stats`"
+            @click="$emit('teamSelect', team)"
+          >
+            <TeamMark :team="team" :size="24" />
+          </button>
           <span class="team-name" :class="team.id === userTeamId ? 'text-white font-semibold' : 'text-gray-300'">
             {{ team.name }}
           </span>
@@ -82,6 +89,8 @@ defineProps({
   userTeamId: { type: String, default: null },
   players: { type: Object, default: () => ({}) },
 })
+
+defineEmits(['teamSelect'])
 
 function firstName(name) {
   return name?.split(' ')[0] ?? ''
@@ -139,6 +148,47 @@ function formatProbability(value) {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+
+.team-shield-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.team-shield-button::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 999px;
+  border: 1px solid rgba(103, 232, 249, 0.55);
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 18px rgba(103, 232, 249, 0.24);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.team-shield-button:hover,
+.team-shield-button:focus-visible {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.team-shield-button:hover::after,
+.team-shield-button:focus-visible::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.team-shield-button > :deep(*) {
+  position: relative;
+  z-index: 1;
 }
 
 .team-name {

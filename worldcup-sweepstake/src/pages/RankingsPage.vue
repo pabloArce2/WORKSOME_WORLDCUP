@@ -33,7 +33,7 @@
         </div>
       </header>
 
-      <UserBanner :team-probability="userTeamProbability" />
+      <UserBanner :team-probability="userTeamProbability" @open-team="openTeamDetails" />
 
       <section class="leaderboard-head">
         <div class="min-w-0">
@@ -70,40 +70,56 @@
         {{ dataError }}
       </div>
 
-      <section class="model-docs">
-        <div class="model-docs__intro">
-          <p class="eyebrow">Model guide</p>
-          <h2>What The Numbers Mean</h2>
+      <section class="model-docs" :class="{ 'is-collapsed': !docsOpen }">
+        <div class="model-docs__header">
+          <div class="model-docs__intro">
+            <p class="eyebrow">Model guide</p>
+            <h2>What The Numbers Mean</h2>
+          </div>
+          <button
+            class="docs-toggle"
+            type="button"
+            :aria-expanded="docsOpen"
+            @click="docsOpen = !docsOpen"
+          >
+            {{ docsOpen ? 'Hide' : 'Show' }}
+            <svg :class="{ 'is-open': docsOpen }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+        </div>
+
+        <div v-show="docsOpen" class="model-docs__body">
           <p>
             The model simulates the tournament many times. It starts with team strength, updates ratings from real results,
             then runs the remaining group and knockout games to estimate each team's path.
           </p>
-        </div>
 
-        <div class="model-docs__grid">
-          <div>
-            <strong>Win now</strong>
-            <span>Chance this team wins the World Cup from the current situation.</span>
-          </div>
-          <div>
-            <strong>Pre</strong>
-            <span>Chance before any tournament results were applied.</span>
-          </div>
-          <div>
-            <strong>Advance</strong>
-            <span>Chance of reaching the knockout rounds from the group.</span>
-          </div>
-          <div>
-            <strong>Final</strong>
-            <span>Chance of reaching the final match, not necessarily winning it.</span>
-          </div>
-          <div>
-            <strong>Rating</strong>
-            <span>Live team strength. Higher means the simulator trusts the team more.</span>
-          </div>
-          <div>
-            <strong>Form</strong>
-            <span>How much the live rating has moved compared with the starting rating.</span>
+          <div class="model-docs__grid">
+            <div>
+              <strong>Win now</strong>
+              <span>Chance this team wins the World Cup from the current situation.</span>
+            </div>
+            <div>
+              <strong>Pre</strong>
+              <span>Chance before any tournament results were applied.</span>
+            </div>
+            <div>
+              <strong>Advance</strong>
+              <span>Chance of reaching the knockout rounds from the group.</span>
+            </div>
+            <div>
+              <strong>Final</strong>
+              <span>Chance of reaching the final match, not necessarily winning it.</span>
+            </div>
+            <div>
+              <strong>Rating</strong>
+              <span>Live team strength. Higher means the simulator trusts the team more.</span>
+            </div>
+            <div>
+              <strong>Movement</strong>
+              <span>How far the team has climbed or dropped compared with the pre-tournament ranking.</span>
+            </div>
           </div>
         </div>
       </section>
@@ -116,11 +132,21 @@
           :class="[`rank-${team.rank}`, { 'is-user-team': team.id === store.team?.id }]"
           :style="accentVars(team.rank)"
         >
-          <div class="podium-rank">#{{ team.rank }}</div>
+          <div class="podium-rank">
+            <span>#{{ team.rank }}</span>
+            <RankMovement :delta="team.rankDelta" compact />
+          </div>
 
           <div class="podium-ring" :style="ringStyle(team)">
             <div class="podium-ring-inner">
-              <TeamMark :team="team" :size="team.rank === 1 ? 92 : 74" />
+              <button
+                class="shield-button"
+                type="button"
+                :aria-label="`Open ${team.name} stats`"
+                @click="openTeamDetails(team)"
+              >
+                <TeamMark :team="team" :size="team.rank === 1 ? 92 : 74" />
+              </button>
             </div>
           </div>
 
@@ -176,10 +202,20 @@
             class="ranking-row"
             :class="{ 'is-user-team': team.id === store.team?.id }"
           >
-            <div class="rank-number">#{{ team.rank }}</div>
+            <div class="rank-stack">
+              <span class="rank-number">#{{ team.rank }}</span>
+              <RankMovement :delta="team.rankDelta" />
+            </div>
 
             <div class="team-cell">
-              <TeamMark :team="team" :size="42" />
+              <button
+                class="shield-button"
+                type="button"
+                :aria-label="`Open ${team.name} stats`"
+                @click="openTeamDetails(team)"
+              >
+                <TeamMark :team="team" :size="42" />
+              </button>
               <div class="team-info">
                 <div class="team-name">{{ team.name }}</div>
                 <div class="team-meta">
@@ -232,18 +268,28 @@
           No ranking data available yet.
         </div>
       </section>
+
+      <TeamDetailsModal
+        v-if="selectedTeam"
+        :team="selectedTeam"
+        :player="selectedPlayer"
+        :matches="matches"
+        :rank-movement="selectedRankMovement"
+        @close="selectedTeamId = null"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, onUnmounted, ref } from 'vue'
 import { signOut as firebaseSignOut } from 'firebase/auth'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { useRouter } from 'vue-router'
 import { auth, db } from '../firebase.js'
 import { useUserStore } from '../stores/user.js'
 import TeamMark from '../components/TeamMark.vue'
+import TeamDetailsModal from '../components/TeamDetailsModal.vue'
 import UserBanner from '../components/UserBanner.vue'
 import WorksomeLogo from '../components/WorksomeLogo.vue'
 import { getFallbackGroups, getTournamentSnapshot } from '../services/sportsDbApi.js'
@@ -258,12 +304,15 @@ const store = useUserStore()
 const router = useRouter()
 
 const groups = ref(getFallbackGroups())
+const matches = ref([])
 const probabilities = ref({})
 const players = ref({})
 const dataSource = ref('fallback')
 const dataError = ref('')
 const loadingData = ref(false)
 const lastUpdatedAt = ref(null)
+const docsOpen = ref(true)
+const selectedTeamId = ref(null)
 
 const unsubscribers = []
 let refreshTimer = null
@@ -288,13 +337,26 @@ const rankedTeams = computed(() => {
     })
   })
 
-  return Array.from(byId.values())
+  const teams = Array.from(byId.values())
+  const preRanks = rankMap(teams, 'preTournamentWinProbability')
+
+  return teams
     .sort((a, b) =>
       Number(b.currentWinProbability || 0) - Number(a.currentWinProbability || 0) ||
       Number(b.liveRating || 0) - Number(a.liveRating || 0) ||
       String(a.name).localeCompare(String(b.name))
     )
-    .map((team, index) => ({ ...team, rank: index + 1 }))
+    .map((team, index) => {
+      const rank = index + 1
+      const preRank = preRanks[team.id] ?? rank
+
+      return {
+        ...team,
+        rank,
+        preRank,
+        rankDelta: preRank - rank,
+      }
+    })
 })
 
 const podiumTeams = computed(() => rankedTeams.value.slice(0, 3))
@@ -308,6 +370,26 @@ const userTeamProbability = computed(() => {
   const teamId = store.team?.id
   return teamId ? probabilities.value[teamId] ?? null : null
 })
+
+const selectedTeam = computed(() =>
+  selectedTeamId.value
+    ? rankedTeams.value.find(team => team.id === selectedTeamId.value) ?? null
+    : null
+)
+
+const selectedPlayer = computed(() =>
+  selectedTeam.value?.id ? players.value[selectedTeam.value.id] ?? null : null
+)
+
+const selectedRankMovement = computed(() =>
+  selectedTeam.value
+    ? {
+        currentRank: selectedTeam.value.rank,
+        preRank: selectedTeam.value.preRank,
+        delta: selectedTeam.value.rankDelta,
+      }
+    : null
+)
 
 const dataStatusLabel = computed(() => {
   if (loadingData.value) return 'Updating model...'
@@ -346,6 +428,7 @@ async function refreshTournamentData() {
   try {
     const snapshot = await getTournamentSnapshot({ includeStats: false })
     groups.value = snapshot.groups
+    matches.value = snapshot.matches
     probabilities.value = snapshot.probabilities ?? {}
     dataSource.value = snapshot.source
     dataError.value = snapshot.error
@@ -362,9 +445,15 @@ async function refreshTournamentData() {
 async function signOut() {
   unsubscribers.forEach(unsub => unsub())
   if (refreshTimer) window.clearInterval(refreshTimer)
+  selectedTeamId.value = null
   await firebaseSignOut(auth)
   store.clearUser()
   router.push('/')
+}
+
+function openTeamDetails(team) {
+  if (!team?.id) return
+  selectedTeamId.value = team.id
 }
 
 function playerFor(team) {
@@ -437,6 +526,30 @@ function barStyle(team) {
   }
 }
 
+function rankMap(teams, probabilityKey) {
+  return Object.fromEntries(
+    [...teams]
+      .sort((a, b) =>
+        Number(b[probabilityKey] || 0) - Number(a[probabilityKey] || 0) ||
+        Number(b.liveRating || 0) - Number(a.liveRating || 0) ||
+        String(a.name).localeCompare(String(b.name))
+      )
+      .map((team, index) => [team.id, index + 1])
+  )
+}
+
+function rankMovementClass(delta) {
+  if (delta > 0) return 'is-up'
+  if (delta < 0) return 'is-down'
+  return 'is-flat'
+}
+
+function rankMovementText(delta) {
+  if (delta > 0) return `+${delta}`
+  if (delta < 0) return String(delta)
+  return '0'
+}
+
 function formatUpdatedAt(value) {
   if (!value) return ''
 
@@ -447,6 +560,49 @@ function formatUpdatedAt(value) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date)
+}
+
+const RankMovement = defineComponent({
+  props: {
+    delta: { type: Number, default: 0 },
+    compact: { type: Boolean, default: false },
+  },
+  setup(componentProps) {
+    return () => {
+      const delta = Number(componentProps.delta || 0)
+      const isUp = delta > 0
+      const isDown = delta < 0
+
+      return h('span', {
+        class: ['rank-movement', rankMovementClass(delta), { 'is-compact': componentProps.compact }],
+        title: isUp
+          ? `Climbed ${delta} places from pre-tournament ranking`
+          : isDown
+            ? `Dropped ${Math.abs(delta)} places from pre-tournament ranking`
+            : 'No movement from pre-tournament ranking',
+      }, [
+        isUp
+          ? h('svg', svgAttrs(), [h('path', { d: 'M12 19V5' }), h('path', { d: 'm5 12 7-7 7 7' })])
+          : isDown
+            ? h('svg', svgAttrs(), [h('path', { d: 'M12 5v14' }), h('path', { d: 'm19 12-7 7-7-7' })])
+            : h('svg', svgAttrs(), [h('path', { d: 'M5 12h14' })]),
+        h('span', rankMovementText(delta)),
+      ])
+    }
+  }
+})
+
+function svgAttrs() {
+  return {
+    width: '13',
+    height: '13',
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    'stroke-width': '2.4',
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+  }
 }
 </script>
 
@@ -537,15 +693,19 @@ function formatUpdatedAt(value) {
 }
 
 .model-docs {
-  display: grid;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
-  gap: 18px;
   padding: 18px;
   border-radius: 14px;
   border: 1px solid rgba(14, 165, 233, 0.2);
   background:
     linear-gradient(135deg, rgba(14, 165, 233, 0.12), transparent 34%),
     rgba(22, 0, 32, 0.72);
+}
+
+.model-docs__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .model-docs__intro h2 {
@@ -555,11 +715,46 @@ function formatUpdatedAt(value) {
   font-weight: 900;
 }
 
-.model-docs__intro p {
-  margin: 8px 0 0;
+.model-docs__body {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.model-docs__body > p {
+  margin: 0;
   color: #9ca3af;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.docs-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(103, 232, 249, 0.22);
+  background: rgba(14, 165, 233, 0.12);
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 900;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.docs-toggle:hover {
+  border-color: rgba(103, 232, 249, 0.42);
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.docs-toggle svg {
+  transition: transform 0.2s ease;
+}
+
+.docs-toggle svg.is-open {
+  transform: rotate(180deg);
 }
 
 .model-docs__grid {
@@ -647,6 +842,10 @@ function formatUpdatedAt(value) {
   position: absolute;
   top: 14px;
   left: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
   color: var(--accent);
   font-size: 18px;
   font-weight: 900;
@@ -829,7 +1028,7 @@ function formatUpdatedAt(value) {
 
 .ranking-row {
   display: grid;
-  grid-template-columns: 58px minmax(220px, 1.3fr) 72px 86px 80px minmax(210px, 1fr);
+  grid-template-columns: 74px minmax(250px, 1.35fr) 72px 86px 80px minmax(210px, 1fr);
   gap: 14px;
   align-items: center;
   min-height: 74px;
@@ -847,11 +1046,94 @@ function formatUpdatedAt(value) {
   font-weight: 900;
 }
 
+.rank-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.rank-movement {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 46px;
+  min-height: 22px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.rank-movement.is-compact {
+  min-width: 0;
+  min-height: 20px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.rank-movement.is-up {
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+.rank-movement.is-down {
+  background: rgba(248, 113, 113, 0.16);
+  color: #fca5a5;
+}
+
+.rank-movement.is-flat {
+  background: rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+}
+
 .team-cell {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+.shield-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.shield-button::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 1px solid rgba(103, 232, 249, 0.55);
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 22px rgba(103, 232, 249, 0.28);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.shield-button:hover,
+.shield-button:focus-visible {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.shield-button:hover::after,
+.shield-button:focus-visible::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.shield-button > :deep(*) {
+  position: relative;
+  z-index: 1;
 }
 
 .team-info {
@@ -996,7 +1278,7 @@ function formatUpdatedAt(value) {
     min-height: 0;
   }
 
-  .model-docs {
+  .model-docs__body {
     grid-template-columns: 1fr;
   }
 
@@ -1014,7 +1296,7 @@ function formatUpdatedAt(value) {
   }
 
   .ranking-row {
-    grid-template-columns: 46px minmax(0, 1fr);
+    grid-template-columns: 62px minmax(0, 1fr);
     gap: 10px 12px;
   }
 

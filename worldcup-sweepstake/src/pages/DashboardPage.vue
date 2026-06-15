@@ -24,7 +24,7 @@
         </button>
       </div>
 
-      <UserBanner :team-probability="userTeamProbability" />
+      <UserBanner :team-probability="userTeamProbability" @open-team="openTeamDetails" />
 
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap gap-1 p-1 rounded-xl w-fit" style="background: rgba(22, 0, 32, 0.8); border: 1px solid rgba(124, 58, 237, 0.25);">
@@ -89,12 +89,13 @@
               :group="group"
               :userTeamId="store.team?.id ?? null"
               :players="players"
+              @team-select="openTeamDetails"
             />
           </div>
         </div>
 
         <div v-else-if="activeTab === 'matches'" key="matches">
-          <MatchList :matches="matches" :players="players" />
+          <MatchList :matches="matches" :players="players" @team-select="openTeamDetails" />
         </div>
 
         <div v-else-if="activeTab === 'bracket'" key="bracket">
@@ -107,6 +108,15 @@
           <StatsPanel :goalscorers="goalscorers" :cards="cards" :groups="groups" :matches="matches" />
         </div>
       </Transition>
+
+      <TeamDetailsModal
+        v-if="selectedTeam"
+        :team="selectedTeam"
+        :player="selectedPlayer"
+        :matches="matches"
+        :rank-movement="selectedRankMovement"
+        @close="selectedTeamId = null"
+      />
     </div>
   </div>
 </template>
@@ -123,6 +133,7 @@ import GroupTable from '../components/GroupTable.vue'
 import BracketView from '../components/BracketView.vue'
 import MatchList from '../components/MatchList.vue'
 import StatsPanel from '../components/StatsPanel.vue'
+import TeamDetailsModal from '../components/TeamDetailsModal.vue'
 import WorksomeLogo from '../components/WorksomeLogo.vue'
 import { getFallbackBracket, getFallbackGroups, getTournamentSnapshot } from '../services/sportsDbApi.js'
 
@@ -148,6 +159,7 @@ const dataError = ref('')
 const loadingData = ref(false)
 const lastUpdatedAt = ref(null)
 const players = ref({})
+const selectedTeamId = ref(null)
 
 const unsubscribers = []
 let refreshTimer = null
@@ -163,6 +175,68 @@ const userTeamProbability = computed(() => {
   const teamId = store.team?.id
   return teamId ? probabilities.value[teamId] ?? null : null
 })
+
+const allTeams = computed(() =>
+  groups.value.flatMap(group => group.teams.map(team => {
+    const probability = probabilities.value[team.id] ?? team.probability ?? {}
+
+    return {
+      ...team,
+      group: team.group || group.id,
+      currentWinProbability: probability.championProbability ?? team.currentWinProbability ?? 0,
+      preTournamentWinProbability: probability.preTournamentProbability ?? team.preTournamentWinProbability ?? 0,
+      groupAdvanceProbability: probability.groupAdvanceProbability ?? team.groupAdvanceProbability ?? 0,
+      finalProbability: probability.finalProbability ?? team.finalProbability ?? 0,
+      liveRating: probability.liveRating ?? team.liveRating ?? team.baseRating ?? 1600,
+      baseRating: probability.baseRating ?? team.baseRating ?? 1600,
+      formRatingDelta: probability.formRatingDelta ?? team.formRatingDelta ?? 0,
+    }
+  }))
+)
+
+const teamsById = computed(() =>
+  new Map(allTeams.value.map(team => [team.id, team]))
+)
+
+const rankingTeams = computed(() =>
+  allTeams.value.map(team => {
+    const probability = probabilities.value[team.id] ?? team.probability ?? {}
+
+    return {
+      ...team,
+      currentWinProbability: probability.championProbability ?? team.currentWinProbability ?? 0,
+      preTournamentWinProbability: probability.preTournamentProbability ?? team.preTournamentWinProbability ?? 0,
+      liveRating: probability.liveRating ?? team.liveRating ?? team.baseRating ?? 1600,
+    }
+  })
+)
+
+const rankMovementsById = computed(() => {
+  const currentRanks = rankMap(rankingTeams.value, 'currentWinProbability')
+  const preRanks = rankMap(rankingTeams.value, 'preTournamentWinProbability')
+
+  return Object.fromEntries(rankingTeams.value.map(team => {
+    const currentRank = currentRanks[team.id]
+    const preRank = preRanks[team.id]
+    return [team.id, {
+      currentRank,
+      preRank,
+      delta: preRank - currentRank,
+    }]
+  }))
+})
+
+const selectedTeam = computed(() =>
+  selectedTeamId.value ? teamsById.value.get(selectedTeamId.value) ?? null : null
+)
+
+const selectedPlayer = computed(() =>
+  selectedTeam.value?.id ? players.value[selectedTeam.value.id] ?? null : null
+)
+
+const selectedRankMovement = computed(() =>
+  selectedTeam.value?.id ? rankMovementsById.value[selectedTeam.value.id] ?? null : null
+)
 
 onMounted(() => {
   refreshTournamentData()
@@ -214,9 +288,27 @@ async function refreshTournamentData() {
 async function signOut() {
   unsubscribers.forEach(unsub => unsub())
   if (refreshTimer) window.clearInterval(refreshTimer)
+  selectedTeamId.value = null
   await firebaseSignOut(auth)
   store.clearUser()
   router.push('/')
+}
+
+function openTeamDetails(team) {
+  if (!team?.id) return
+  selectedTeamId.value = team.id
+}
+
+function rankMap(teams, probabilityKey) {
+  return Object.fromEntries(
+    [...teams]
+      .sort((a, b) =>
+        Number(b[probabilityKey] || 0) - Number(a[probabilityKey] || 0) ||
+        Number(b.liveRating || 0) - Number(a.liveRating || 0) ||
+        String(a.name).localeCompare(String(b.name))
+      )
+      .map((team, index) => [team.id, index + 1])
+  )
 }
 
 function formatUpdatedAt(value) {

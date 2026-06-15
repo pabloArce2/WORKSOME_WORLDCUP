@@ -6,7 +6,7 @@
     <div class="grid-overlay absolute inset-0 pointer-events-none"></div>
 
     <div class="relative z-10 w-full max-w-lg flex flex-col items-center gap-8">
-      <UserBanner :hideTeam="!revealDone" class="w-full" />
+      <UserBanner :hideTeam="!revealDone" :show-team-stats-action="false" class="w-full" />
 
       <div class="text-center">
         <h2 class="text-2xl font-bold text-white">Your Team Awaits</h2>

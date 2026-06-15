@@ -19,8 +19,17 @@
       <p class="text-xs truncate" style="color: #9CA3AF;">{{ store.user?.email }}</p>
     </div>
 
-    <div v-if="store.team && !hideTeam" class="flex items-center gap-2 flex-shrink-0">
-      <TeamMark :team="store.team" :size="32" />
+    <div v-if="store.team && !hideTeam" class="team-banner-team">
+      <button
+        v-if="showTeamStatsAction"
+        class="team-mark-button"
+        type="button"
+        :aria-label="`Open ${store.team.name} stats`"
+        @click="emit('openTeam', store.team)"
+      >
+        <TeamMark :team="store.team" :size="32" />
+      </button>
+      <TeamMark v-else :team="store.team" :size="32" />
       <div class="text-right">
         <p class="text-white font-medium text-sm">{{ store.team.name }}</p>
         <span v-if="displayProbability !== null"
@@ -30,6 +39,14 @@
           <span v-if="preTournamentProbability !== null"> / {{ formatProbability(preTournamentProbability) }} pre</span>
         </span>
       </div>
+      <button
+        v-if="showTeamStatsAction"
+        class="team-stats-button"
+        type="button"
+        @click="emit('openTeam', store.team)"
+      >
+        Stats
+      </button>
     </div>
   </div>
 </template>
@@ -42,7 +59,10 @@ import TeamMark from './TeamMark.vue'
 const props = defineProps({
   hideTeam: { type: Boolean, default: false },
   teamProbability: { type: Object, default: null },
+  showTeamStatsAction: { type: Boolean, default: true },
 })
+
+const emit = defineEmits(['openTeam'])
 
 const store = useUserStore()
 
@@ -66,3 +86,83 @@ function formatProbability(value) {
   return `${(Number(value) * 100).toFixed(1)}%`
 }
 </script>
+
+<style scoped>
+.team-banner-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.team-mark-button,
+.team-stats-button {
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.team-mark-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.team-mark-button::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 999px;
+  border: 1px solid rgba(103, 232, 249, 0.55);
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 18px rgba(103, 232, 249, 0.26);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.team-mark-button:hover,
+.team-mark-button:focus-visible {
+  transform: translateY(-1px);
+}
+
+.team-mark-button:hover::after,
+.team-mark-button:focus-visible::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.team-mark-button > :deep(*) {
+  position: relative;
+  z-index: 1;
+}
+
+.team-stats-button {
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(103, 232, 249, 0.22);
+  background: rgba(14, 165, 233, 0.12);
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.team-stats-button:hover {
+  border-color: rgba(103, 232, 249, 0.42);
+  background: rgba(14, 165, 233, 0.2);
+}
+
+@media (max-width: 640px) {
+  .team-banner-team {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .team-stats-button {
+    width: 100%;
+  }
+}
+</style>

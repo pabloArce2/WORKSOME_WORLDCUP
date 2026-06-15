@@ -18,7 +18,7 @@
 
       <div class="mt-3 flex flex-col gap-2">
         <div class="flex items-center justify-between gap-3">
-          <TeamIdentity :team="match.home" />
+          <TeamIdentity :team="match.home" @team-select="emit('teamSelect', $event)" />
           <div class="flex items-center gap-3 min-w-0 justify-end">
             <span v-if="playerFor(match.home)" class="text-xs text-gray-400 truncate max-w-[120px]">
               {{ ownerLabel(playerFor(match.home)) }}
@@ -27,7 +27,7 @@
           </div>
         </div>
         <div class="flex items-center justify-between gap-3">
-          <TeamIdentity :team="match.away" />
+          <TeamIdentity :team="match.away" @team-select="emit('teamSelect', $event)" />
           <div class="flex items-center gap-3 min-w-0 justify-end">
             <span v-if="playerFor(match.away)" class="text-xs text-gray-400 truncate max-w-[120px]">
               {{ ownerLabel(playerFor(match.away)) }}
@@ -76,6 +76,8 @@ const props = defineProps({
   players: { type: Object, default: () => ({}) },
   limit: { type: Number, default: 16 },
 })
+
+const emit = defineEmits(['teamSelect'])
 
 const visibleMatches = computed(() => props.matches.slice(0, props.limit))
 
@@ -130,7 +132,8 @@ const TeamIdentity = defineComponent({
   props: {
     team: { type: Object, default: null },
   },
-  setup(componentProps) {
+  emits: ['teamSelect'],
+  setup(componentProps, { emit: componentEmit }) {
     return () => h('div', {
       style: {
         display: 'flex',
@@ -140,7 +143,21 @@ const TeamIdentity = defineComponent({
         flex: 1,
       }
     }, [
-      h(TeamMark, { team: componentProps.team, size: 24 }),
+      h('button', {
+        type: 'button',
+        class: 'match-team-shield',
+        'aria-label': `Open ${componentProps.team?.name || 'team'} stats`,
+        onClick: () => {
+          if (componentProps.team?.id) componentEmit('teamSelect', componentProps.team)
+        },
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          borderRadius: '999px',
+        },
+      }, [h(TeamMark, { team: componentProps.team, size: 24 })]),
       h('span', {
         style: {
           color: '#E5E7EB',
@@ -226,3 +243,41 @@ function firstName(name) {
   return name?.split(' ')[0] ?? ''
 }
 </script>
+
+<style scoped>
+.match-team-shield {
+  position: relative;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.match-team-shield::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 999px;
+  border: 1px solid rgba(103, 232, 249, 0.55);
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 18px rgba(103, 232, 249, 0.24);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.match-team-shield:hover,
+.match-team-shield:focus-visible {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.match-team-shield:hover::after,
+.match-team-shield:focus-visible::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.match-team-shield > :deep(*) {
+  position: relative;
+  z-index: 1;
+}
+</style>
