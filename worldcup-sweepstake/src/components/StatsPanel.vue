@@ -1,6 +1,24 @@
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <section class="stats-card">
+      <div class="stats-heading">Live Win Chances</div>
+      <div
+        v-for="team in liveFavorites"
+        :key="team.id"
+        class="stats-row"
+      >
+        <TeamMark :team="team" />
+        <div class="min-w-0 flex-1">
+          <div class="stats-primary">{{ team.name }}</div>
+          <div class="stats-secondary">
+            {{ formatDelta(team.currentWinProbability, team.preTournamentWinProbability) }} from pre-tournament
+          </div>
+        </div>
+        <span class="stats-value">{{ formatProbability(team.currentWinProbability) }}</span>
+      </div>
+    </section>
+
+    <section class="stats-card">
       <div class="stats-heading">{{ topGoalscorers.length ? 'Goalscorers' : 'Team Goals' }}</div>
 
       <div
@@ -137,6 +155,12 @@ const topCards = computed(() =>
     .slice(0, 8)
 )
 
+const liveFavorites = computed(() =>
+  [...allTeams.value]
+    .sort((a, b) => Number(b.currentWinProbability || 0) - Number(a.currentWinProbability || 0))
+    .slice(0, 8)
+)
+
 const topScoringTeams = computed(() =>
   [...allTeams.value]
     .sort((a, b) => b.gf - a.gf || b.gd - a.gd || b.pts - a.pts)
@@ -189,6 +213,18 @@ function formatKickoff(value) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date)
+}
+
+function formatProbability(value) {
+  const number = Number(value ?? 0)
+  if (number > 0 && number < 0.001) return '<0.1%'
+  return `${(number * 100).toFixed(1)}%`
+}
+
+function formatDelta(current, preTournament) {
+  const delta = Number(current ?? 0) - Number(preTournament ?? 0)
+  const sign = delta >= 0 ? '+' : ''
+  return `${sign}${(delta * 100).toFixed(1)} pts`
 }
 
 </script>

@@ -1,14 +1,18 @@
 import fallbackGroupsData from '../assets/data/groups.json'
 import fallbackTeams from '../assets/data/teams.json'
 import { enrichTeam, getTeamMeta, normalizeTeamName } from '../assets/data/teamMeta.js'
+import {
+  attachProbabilitiesToGroups,
+  attachProbabilitiesToMatches,
+  calculateTournamentProbabilities,
+} from './probabilityModel.js'
 
-const API_BASE_URL = (
-  import.meta.env.VITE_THESPORTSDB_API_BASE_URL || 'https://www.thesportsdb.com/api/v1/json'
-).replace(/\/$/, '')
+const API_BASE_URL = readEnv('VITE_THESPORTSDB_API_BASE_URL', 'https://www.thesportsdb.com/api/v1/json')
+  .replace(/\/$/, '')
 
-const API_KEY = import.meta.env.VITE_THESPORTSDB_API_KEY || '123'
-const LEAGUE_ID = import.meta.env.VITE_THESPORTSDB_WORLDCUP_LEAGUE_ID || '4429'
-const SEASON = import.meta.env.VITE_THESPORTSDB_WORLDCUP_SEASON || '2026'
+const API_KEY = readEnv('VITE_THESPORTSDB_API_KEY', '123')
+const LEAGUE_ID = readEnv('VITE_THESPORTSDB_WORLDCUP_LEAGUE_ID', '4429')
+const SEASON = readEnv('VITE_THESPORTSDB_WORLDCUP_SEASON', '2026')
 const ROUND_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8]
 const GROUP_ORDER = 'ABCDEFGHIJKL'.split('')
 const TIMELINE_EVENT_LIMIT = 10
@@ -71,6 +75,10 @@ export async function getTournamentSnapshot(options = {}) {
 
   const matches = mergeMatches(roundEvents.map(normalizeEvent).filter(Boolean))
   const groups = buildGroups(matches)
+  const resolvedGroups = groups.length ? groups : getFallbackGroups()
+  const probabilities = calculateTournamentProbabilities({ groups: resolvedGroups, matches })
+  const groupsWithProbabilities = attachProbabilitiesToGroups(resolvedGroups, probabilities)
+  const matchesWithProbabilities = attachProbabilitiesToMatches(matches, probabilities)
   const timelineStats = includeStats ? await fetchTimelineStats(matches) : { goalscorers: [], cards: [] }
   const hasApiData = matches.length > 0 || groups.length > 0
 
@@ -79,9 +87,10 @@ export async function getTournamentSnapshot(options = {}) {
   }
 
   return {
-    groups: groups.length ? groups : getFallbackGroups(),
-    bracket: buildBracket(matches),
-    matches,
+    groups: groupsWithProbabilities,
+    bracket: buildBracket(matchesWithProbabilities),
+    matches: matchesWithProbabilities,
+    probabilities,
     goalscorers: timelineStats.goalscorers,
     cards: timelineStats.cards,
     updatedAt: new Date().toISOString(),
@@ -487,4 +496,8 @@ function toTimestamp(value) {
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value))
+}
+
+function readEnv(key, fallback) {
+  return import.meta.env?.[key] || globalThis.process?.env?.[key] || fallback
 }

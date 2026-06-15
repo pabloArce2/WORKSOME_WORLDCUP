@@ -80,6 +80,7 @@ import UserBanner from '../components/UserBanner.vue'
 import TeamReel from '../components/TeamReel.vue'
 import TeamMark from '../components/TeamMark.vue'
 import { getFallbackTeams, getTournamentTeams } from '../services/sportsDbApi.js'
+import { fallbackPoolWinProbability } from '../services/probabilityModel.js'
 
 const router = useRouter()
 const store = useUserStore()
@@ -98,19 +99,6 @@ let pendingProfile = null
 const revealedTeam = computed(() =>
   assignedTeamId.value ? teams.value.find(t => t.id === assignedTeamId.value) : null
 )
-
-function calcWinProbability(teamId, pool, teamPool) {
-  const availableTeams = pool
-    .map(id => teamPool.find(team => team.id === id))
-    .filter(Boolean)
-  const hasOdds = availableTeams.some(team => Number(team.preOdds) > 0)
-
-  if (!hasOdds) return pool.length ? 1 / pool.length : 0
-
-  const totalOdds = availableTeams.reduce((sum, team) => sum + (Number(team.preOdds) || 0), 0)
-  const teamOdds = Number(teamPool.find(team => team.id === teamId)?.preOdds) || 0
-  return totalOdds > 0 ? teamOdds / totalOdds : 0
-}
 
 async function loadTeams() {
   teamsLoading.value = true
@@ -151,7 +139,9 @@ async function startAssignment() {
       pickedTeamId = pool[Math.floor(Math.random() * pool.length)]
       pickedTeam = teamPool.find(team => team.id === pickedTeamId)
       const profileTeam = serializeTeam(pickedTeam)
-      const prob = calcWinProbability(pickedTeamId, teamIds, teamPool)
+      const prob = pickedTeam?.currentWinProbability ??
+        pickedTeam?.preTournamentWinProbability ??
+        fallbackPoolWinProbability(pickedTeamId, teamIds, teamPool)
 
       tx.set(doc(db, 'users', user.uid), {
         teamId: pickedTeamId,
@@ -211,6 +201,11 @@ function serializeTeam(team) {
     group: team.group ?? null,
     color: team.color ?? null,
     preOdds: team.preOdds ?? 0,
+    currentWinProbability: team.currentWinProbability ?? null,
+    preTournamentWinProbability: team.preTournamentWinProbability ?? null,
+    groupAdvanceProbability: team.groupAdvanceProbability ?? null,
+    liveRating: team.liveRating ?? null,
+    baseRating: team.baseRating ?? null,
   }
 }
 

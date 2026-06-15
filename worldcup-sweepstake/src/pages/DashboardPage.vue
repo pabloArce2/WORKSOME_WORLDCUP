@@ -24,19 +24,33 @@
         </button>
       </div>
 
-      <UserBanner />
+      <UserBanner :team-probability="userTeamProbability" />
 
-      <div class="flex flex-wrap gap-1 p-1 rounded-xl w-fit" style="background: rgba(22, 0, 32, 0.8); border: 1px solid rgba(124, 58, 237, 0.25);">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap gap-1 p-1 rounded-xl w-fit" style="background: rgba(22, 0, 32, 0.8); border: 1px solid rgba(124, 58, 237, 0.25);">
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            class="px-4 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+            :style="activeTab === tab.id
+              ? 'background: linear-gradient(135deg, #7C3AED, #6D28D9); color: white; box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);'
+              : 'color: #9CA3AF;'"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
+
         <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          @click="activeTab = tab.id"
-          class="px-4 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          :style="activeTab === tab.id
-            ? 'background: linear-gradient(135deg, #7C3AED, #6D28D9); color: white; box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);'
-            : 'color: #9CA3AF;'"
+          @click="router.push('/rankings')"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+          style="background: rgba(14, 165, 233, 0.14); border: 1px solid rgba(103, 232, 249, 0.28); color: #67E8F9;"
         >
-          {{ tab.label }}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/>
+            <path d="m19 9-5 5-4-4-3 3"/>
+          </svg>
+          Rankings
         </button>
       </div>
 
@@ -128,6 +142,7 @@ const bracket = ref(getFallbackBracket())
 const matches = ref([])
 const goalscorers = ref([])
 const cards = ref([])
+const probabilities = ref({})
 const dataSource = ref('fallback')
 const dataError = ref('')
 const loadingData = ref(false)
@@ -142,6 +157,11 @@ const dataStatusLabel = computed(() => {
   if (dataSource.value === 'api') return `TheSportsDB data ${formatUpdatedAt(lastUpdatedAt.value)}`
   if (dataSource.value === 'partial') return `Partial TheSportsDB data ${formatUpdatedAt(lastUpdatedAt.value)}`
   return 'Using local fallback data'
+})
+
+const userTeamProbability = computed(() => {
+  const teamId = store.team?.id
+  return teamId ? probabilities.value[teamId] ?? null : null
 })
 
 onMounted(() => {
@@ -176,6 +196,7 @@ async function refreshTournamentData() {
     groups.value = snapshot.groups
     bracket.value = snapshot.bracket
     matches.value = snapshot.matches
+    probabilities.value = snapshot.probabilities ?? {}
     goalscorers.value = snapshot.goalscorers
     cards.value = snapshot.cards
     dataSource.value = snapshot.source

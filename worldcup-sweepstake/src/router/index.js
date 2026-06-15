@@ -5,11 +5,13 @@ import { doc, getDoc } from 'firebase/firestore'
 const LoginPage     = () => import('../pages/LoginPage.vue')
 const AssignPage    = () => import('../pages/AssignPage.vue')
 const DashboardPage = () => import('../pages/DashboardPage.vue')
+const RankingsPage  = () => import('../pages/RankingsPage.vue')
 
 const routes = [
   { path: '/',          component: LoginPage },
   { path: '/assign',    component: AssignPage,    meta: { requiresAuth: true } },
   { path: '/dashboard', component: DashboardPage, meta: { requiresAuth: true, requiresTeam: true } },
+  { path: '/rankings',  component: RankingsPage,  meta: { requiresAuth: true, requiresTeam: true } },
 ]
 
 const router = createRouter({

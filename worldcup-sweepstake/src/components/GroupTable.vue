@@ -5,69 +5,71 @@
       <span class="text-white font-semibold">{{ group.name }}</span>
     </div>
 
-    <div class="overflow-hidden">
-      <table class="w-full min-w-0 text-sm">
-        <thead>
-          <tr style="color: #6B7280; border-bottom: 1px solid rgba(124, 58, 237, 0.15);">
-            <th class="text-left px-4 py-2 font-medium w-[34%]">Team</th>
-            <th class="text-left px-3 py-2 font-medium w-[24%]">Player</th>
-            <th class="text-center px-2 py-2 font-medium w-10">P</th>
-            <th class="text-center px-2 py-2 font-medium w-10">W</th>
-            <th class="text-center px-2 py-2 font-medium w-10">D</th>
-            <th class="text-center px-2 py-2 font-medium w-10">L</th>
-            <th class="text-center px-2 py-2 font-medium w-12">GD</th>
-            <th class="text-center px-3 py-2 font-medium w-12">Pts</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="team in group.teams"
-            :key="team.id"
-            :class="team.id === userTeamId ? 'user-row' : ''"
-            class="transition-all duration-200"
-          >
-            <td class="px-4 py-2.5">
-              <div class="flex items-center gap-2 min-w-0">
-                <TeamMark :team="team" :size="24" />
-                <span class="truncate" :class="team.id === userTeamId ? 'text-white font-semibold' : 'text-gray-300'">
-                  {{ team.name }}
-                </span>
-                <span v-if="team.id === userTeamId"
-                      class="text-xs px-1.5 py-0.5 rounded text-purple-200 font-medium flex-shrink-0"
-                      style="background: rgba(124, 58, 237, 0.4);">you</span>
-              </div>
-            </td>
+    <div class="group-grid" role="table" :aria-label="group.name">
+      <div class="group-row group-row--head" role="row">
+        <div class="team-column" role="columnheader">Team</div>
+        <div class="player-column" role="columnheader">Player</div>
+        <div class="stat-cell" role="columnheader">P</div>
+        <div class="stat-cell" role="columnheader">W</div>
+        <div class="stat-cell" role="columnheader">D</div>
+        <div class="stat-cell" role="columnheader">L</div>
+        <div class="stat-cell" role="columnheader">GD</div>
+        <div class="stat-cell" role="columnheader">Pts</div>
+        <div class="win-cell" role="columnheader">Win</div>
+      </div>
 
-            <td class="px-3 py-2.5">
-              <div v-if="players[team.id]" class="flex items-center gap-1.5 min-w-0">
-                <img v-if="players[team.id].photoURL"
-                     :src="players[team.id].photoURL"
-                     :alt="players[team.id].displayName"
-                     class="w-6 h-6 rounded-full object-cover ring-1 ring-purple-500/50 flex-shrink-0" />
-                <div v-else
-                     class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                     style="background: linear-gradient(135deg, #7C3AED, #A855F7);">
-                  {{ players[team.id].displayName?.charAt(0) ?? '?' }}
-                </div>
-                <span class="text-xs text-gray-400 truncate">
-                  {{ firstName(players[team.id].displayName) }}
-                </span>
-              </div>
-              <span v-else class="text-xs text-gray-600">-</span>
-            </td>
+      <div
+        v-for="team in group.teams"
+        :key="team.id"
+        :class="team.id === userTeamId ? 'user-row' : ''"
+        class="group-row transition-all duration-200"
+        role="row"
+      >
+        <div class="team-column team-cell" role="cell">
+          <TeamMark :team="team" :size="24" />
+          <span class="team-name" :class="team.id === userTeamId ? 'text-white font-semibold' : 'text-gray-300'">
+            {{ team.name }}
+          </span>
+          <span v-if="team.id === userTeamId" class="you-pill">you</span>
+        </div>
 
-            <td class="text-center px-2 py-2.5 text-gray-300">{{ team.played ?? 0 }}</td>
-            <td class="text-center px-2 py-2.5 text-gray-300">{{ team.w }}</td>
-            <td class="text-center px-2 py-2.5 text-gray-300">{{ team.d }}</td>
-            <td class="text-center px-2 py-2.5 text-gray-300">{{ team.l }}</td>
-            <td class="text-center px-2 py-2.5 text-gray-300">{{ formatGoalDiff(team.gd) }}</td>
-            <td class="text-center px-3 py-2.5 font-bold"
-                :style="team.id === userTeamId ? 'color: #A855F7;' : 'color: #E5E7EB;'">
-              {{ team.pts }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <div class="player-column player-cell" role="cell">
+          <template v-if="players[team.id]">
+            <img v-if="players[team.id].photoURL"
+                 :src="players[team.id].photoURL"
+                 :alt="players[team.id].displayName"
+                 class="player-avatar" />
+            <div v-else class="player-avatar player-initials">
+              {{ players[team.id].displayName?.charAt(0) ?? '?' }}
+            </div>
+            <span class="player-name">
+              {{ firstName(players[team.id].displayName) }}
+            </span>
+          </template>
+          <span v-else class="text-xs text-gray-600">-</span>
+        </div>
+
+        <div class="stat-cell" role="cell">{{ team.played ?? 0 }}</div>
+        <div class="stat-cell" role="cell">{{ team.w }}</div>
+        <div class="stat-cell" role="cell">{{ team.d }}</div>
+        <div class="stat-cell" role="cell">{{ team.l }}</div>
+        <div class="stat-cell" role="cell">{{ formatGoalDiff(team.gd) }}</div>
+        <div class="stat-cell points-cell" role="cell">{{ team.pts }}</div>
+        <div class="win-cell" role="cell">
+          <span class="win-pill" :class="{ 'is-user': team.id === userTeamId }">
+            {{ formatProbability(team.currentWinProbability) }}
+          </span>
+        </div>
+
+        <div class="compact-stats" aria-hidden="true">
+          <span><small>P</small>{{ team.played ?? 0 }}</span>
+          <span><small>W</small>{{ team.w }}</span>
+          <span><small>D</small>{{ team.d }}</span>
+          <span><small>L</small>{{ team.l }}</span>
+          <span><small>GD</small>{{ formatGoalDiff(team.gd) }}</span>
+          <span><small>Pts</small>{{ team.pts }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -89,11 +91,196 @@ function formatGoalDiff(value) {
   const number = Number(value ?? 0)
   return number > 0 ? `+${number}` : String(number)
 }
+
+function formatProbability(value) {
+  const number = Number(value ?? 0)
+  if (number > 0 && number < 0.001) return '<0.1%'
+  return `${(number * 100).toFixed(1)}%`
+}
 </script>
 
 <style scoped>
+.group-grid {
+  width: 100%;
+  overflow: hidden;
+}
+
+.group-row {
+  display: grid;
+  grid-template-columns: minmax(92px, 1.45fr) minmax(58px, 0.8fr) 22px 22px 22px 22px 32px 34px 52px;
+  column-gap: 4px;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.12);
+  font-size: 13px;
+}
+
+.group-row:last-child {
+  border-bottom: 0;
+}
+
+.group-row--head {
+  min-height: 44px;
+  color: #6b7280;
+  font-weight: 600;
+  border-bottom-color: rgba(124, 58, 237, 0.15);
+}
+
+.team-column,
+.player-column,
+.stat-cell,
+.win-cell {
+  min-width: 0;
+}
+
+.team-cell,
+.player-cell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.team-name {
+  min-width: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.you-pill {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(124, 58, 237, 0.4);
+  color: #e9d5ff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.player-avatar {
+  width: 23px;
+  height: 23px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.55);
+}
+
+.player-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #7C3AED, #A855F7);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.player-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.stat-cell {
+  text-align: center;
+  color: #d1d5db;
+}
+
+.points-cell {
+  color: #e5e7eb;
+  font-weight: 800;
+}
+
+.win-cell {
+  text-align: right;
+}
+
+.win-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-height: 24px;
+  padding: 3px 5px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.14);
+  color: #c084fc;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.win-pill.is-user {
+  background: rgba(168, 85, 247, 0.22);
+  color: #f3e8ff;
+}
+
+.compact-stats {
+  display: none;
+}
+
 .user-row {
   background: rgba(124, 58, 237, 0.12);
   box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.25);
+}
+
+@media (max-width: 640px) {
+  .group-row--head {
+    display: none;
+  }
+
+  .group-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px 10px;
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .team-column {
+    grid-column: 1;
+  }
+
+  .player-column {
+    grid-column: 1 / -1;
+  }
+
+  .win-cell {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .group-row > .stat-cell {
+    display: none;
+  }
+
+  .compact-stats {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .compact-stats span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 28px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.045);
+    color: #e5e7eb;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .compact-stats small {
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 700;
+  }
 }
 </style>

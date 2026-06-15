@@ -23,10 +23,11 @@
       <TeamMark :team="store.team" :size="32" />
       <div class="text-right">
         <p class="text-white font-medium text-sm">{{ store.team.name }}</p>
-        <span v-if="store.profile?.winProbability"
+        <span v-if="displayProbability !== null"
               class="text-xs px-2 py-0.5 rounded-full font-semibold"
               style="background: linear-gradient(90deg, #7C3AED, #A855F7); color: white;">
-          {{ (store.profile.winProbability * 100).toFixed(1) }}% chance
+          {{ formatProbability(displayProbability) }} now
+          <span v-if="preTournamentProbability !== null"> / {{ formatProbability(preTournamentProbability) }} pre</span>
         </span>
       </div>
     </div>
@@ -38,8 +39,9 @@ import { computed } from 'vue'
 import { useUserStore } from '../stores/user.js'
 import TeamMark from './TeamMark.vue'
 
-defineProps({
+const props = defineProps({
   hideTeam: { type: Boolean, default: false },
+  teamProbability: { type: Object, default: null },
 })
 
 const store = useUserStore()
@@ -48,4 +50,19 @@ const initials = computed(() => {
   const name = store.user?.displayName || store.user?.email || '?'
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 })
+
+const displayProbability = computed(() =>
+  props.teamProbability?.championProbability ??
+  store.team?.currentWinProbability ??
+  store.profile?.winProbability ??
+  null
+)
+
+const preTournamentProbability = computed(() =>
+  props.teamProbability?.preTournamentProbability ?? null
+)
+
+function formatProbability(value) {
+  return `${(Number(value) * 100).toFixed(1)}%`
+}
 </script>
