@@ -165,9 +165,12 @@ const unsubscribers = []
 let refreshTimer = null
 
 const dataStatusLabel = computed(() => {
-  if (loadingData.value) return 'Updating TheSportsDB data...'
-  if (dataSource.value === 'api') return `TheSportsDB data ${formatUpdatedAt(lastUpdatedAt.value)}`
-  if (dataSource.value === 'partial') return `Partial TheSportsDB data ${formatUpdatedAt(lastUpdatedAt.value)}`
+  if (loadingData.value) return 'Updating World Cup data...'
+  if (dataSource.value === 'worldcup26') return `WorldCup26 live data ${formatUpdatedAt(lastUpdatedAt.value)}`
+  if (dataSource.value === 'worldcup26_schedule') return `WorldCup26 schedule data ${formatUpdatedAt(lastUpdatedAt.value)}`
+  if (dataSource.value === 'github') return `GitHub schedule fallback ${formatUpdatedAt(lastUpdatedAt.value)}`
+  if (dataSource.value === 'api') return `TheSportsDB fallback ${formatUpdatedAt(lastUpdatedAt.value)}`
+  if (dataSource.value === 'partial') return `Partial API data ${formatUpdatedAt(lastUpdatedAt.value)}`
   return 'Using local fallback data'
 })
 
